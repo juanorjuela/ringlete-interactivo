@@ -1,6 +1,6 @@
 # Ringlete Interactivo
 
-Una experiencia web interactiva y moderna construida con React, TailwindCSS y Framer Motion.
+Aplicación web interactiva desarrollada con React, TailwindCSS y Firebase.
 
 ## 🚀 Características
 
@@ -12,17 +12,17 @@ Una experiencia web interactiva y moderna construida con React, TailwindCSS y Fr
 
 ## 🛠️ Tecnologías
 
-- React + TypeScript
+- React + Vite
+- TypeScript
 - TailwindCSS
+- Firebase (Hosting, Analytics, Firestore)
 - Framer Motion
-- Firebase
-- Vite
 
 ## 📦 Instalación
 
 1. Clona el repositorio:
 ```bash
-git clone https://github.com/tu-usuario/ringlete-interactivo.git
+git clone https://github.com/juanorjuela/ringlete-interactivo.git
 cd ringlete-interactivo
 ```
 
@@ -48,6 +48,8 @@ npm run dev
 ```
 
 ## 🌐 Despliegue
+
+El proyecto está configurado para desplegarse automáticamente en Firebase Hosting.
 
 1. Construye la aplicación:
 ```bash
@@ -82,4 +84,11 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE.md](LICENSE.m
 
 Tu Nombre - [@tu_twitter](https://twitter.com/tu_twitter) - email@example.com
 
-Link del proyecto: [https://github.com/tu-usuario/ringlete-interactivo](https://github.com/tu-usuario/ringlete-interactivo)
+Link del proyecto: [https://github.com/juanorjuela/ringlete-interactivo](https://github.com/juanorjuela/ringlete-interactivo)
+
+## Estructura del Proyecto
+
+- `/src` - Código fuente de la aplicación
+  - `/components` - Componentes React
+  - `/config` - Configuración de Firebase
+  - `/assets` - Recursos estáticos
