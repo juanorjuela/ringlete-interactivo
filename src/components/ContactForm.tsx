@@ -1,160 +1,88 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
 
 const ContactForm = () => {
-  const [formData, setFormData] = useState({
+  const [formState, setFormState] = useState({
     name: '',
     email: '',
-    subject: '',
-    message: ''
+    message: '',
   });
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus('submitting');
-
-    try {
-      await addDoc(collection(db, 'contacts'), {
-        ...formData,
-        timestamp: new Date()
-      });
-      setStatus('success');
-      setFormData({ name: '', email: '', subject: '', message: '' });
-      setTimeout(() => setStatus('idle'), 3000);
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
-    }
+    // Handle form submission
+    console.log('Form submitted:', formState);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormState(prev => ({
+      ...prev,
+      [name]: value,
+    }));
   };
+
+  const inputClasses = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-neon-blue/50 focus:ring-1 focus:ring-neon-blue/50 transition-colors backdrop-blur-sm";
 
   return (
     <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-lg mx-auto p-6 space-y-6"
-      onSubmit={handleSubmit}
+      transition={{ duration: 0.6 }}
     >
-      <div className="space-y-4">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <label htmlFor="name" className="block text-white text-sm font-outfit mb-2">
-            Nombre
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            className="w-full bg-black border-2 border-white/20 rounded-lg px-4 py-2 text-white focus:border-neon-blue focus:outline-none transition-colors"
-          />
-        </motion.div>
-
-        <motion.div
+      <div>
+        <motion.input
+          type="text"
+          name="name"
+          placeholder="Tu nombre"
+          value={formState.name}
+          onChange={handleChange}
+          className={inputClasses}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-        >
-          <label htmlFor="email" className="block text-white text-sm font-outfit mb-2">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="w-full bg-black border-2 border-white/20 rounded-lg px-4 py-2 text-white focus:border-neon-blue focus:outline-none transition-colors"
-          />
-        </motion.div>
+        />
+      </div>
 
-        <motion.div
+      <div>
+        <motion.input
+          type="email"
+          name="email"
+          placeholder="Tu email"
+          value={formState.email}
+          onChange={handleChange}
+          className={inputClasses}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
-        >
-          <label htmlFor="subject" className="block text-white text-sm font-outfit mb-2">
-            Asunto
-          </label>
-          <input
-            type="text"
-            id="subject"
-            name="subject"
-            value={formData.subject}
-            onChange={handleChange}
-            required
-            className="w-full bg-black border-2 border-white/20 rounded-lg px-4 py-2 text-white focus:border-neon-blue focus:outline-none transition-colors"
-          />
-        </motion.div>
+        />
+      </div>
 
-        <motion.div
+      <div>
+        <motion.textarea
+          name="message"
+          placeholder="Tu mensaje"
+          value={formState.message}
+          onChange={handleChange}
+          rows={4}
+          className={`${inputClasses} resize-none`}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
-        >
-          <label htmlFor="message" className="block text-white text-sm font-outfit mb-2">
-            Mensaje
-          </label>
-          <textarea
-            id="message"
-            name="message"
-            value={formData.message}
-            onChange={handleChange}
-            required
-            rows={4}
-            className="w-full bg-black border-2 border-white/20 rounded-lg px-4 py-2 text-white focus:border-neon-blue focus:outline-none transition-colors resize-none"
-          />
-        </motion.div>
+        />
       </div>
 
       <motion.button
         type="submit"
-        disabled={status === 'submitting'}
-        className={`w-full py-3 rounded-lg font-outfit font-bold text-black transition-colors ${
-          status === 'submitting'
-            ? 'bg-white/50'
-            : 'bg-white hover:bg-neon-blue'
-        }`}
+        className="w-full bg-gradient-to-r from-neon-blue via-neon-purple to-neon-pink text-white font-outfit font-medium py-3 px-6 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-neon-blue/50 transition-all duration-300 relative overflow-hidden group"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
-        {status === 'submitting' ? 'Enviando...' : 'Enviar'}
+        <span className="relative z-10">Enviar Mensaje</span>
+        <div className="absolute inset-0 bg-gradient-to-r from-neon-pink via-neon-purple to-neon-blue opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       </motion.button>
-
-      {status === 'success' && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-neon-green text-center font-outfit"
-        >
-          ¡Mensaje enviado con éxito!
-        </motion.p>
-      )}
-
-      {status === 'error' && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-red-500 text-center font-outfit"
-        >
-          Error al enviar el mensaje. Por favor, intenta nuevamente.
-        </motion.p>
-      )}
     </motion.form>
   );
 };

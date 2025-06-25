@@ -1,106 +1,120 @@
-import { useEffect, useRef } from 'react';
-import { motion, useAnimation, useMotionValue } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { useMediaQuery } from 'react-responsive';
 
-interface RingleteProps {
-  onSectionClick: (section: string) => void;
-  currentSection: string;
-}
-
-const sections = [
-  { id: 'home', angle: 0, label: 'Home' },
-  { id: 'about', angle: 60, label: 'Quiénes Somos' },
-  { id: 'services', angle: 120, label: 'Qué Hacemos' },
-  { id: 'projects', angle: 180, label: 'Proyectos' },
-  { id: 'allies', angle: 240, label: 'Aliados' },
-  { id: 'contact', angle: 300, label: 'Contacto' },
+// Configuration for each Ringlete logo layer
+const RINGLETE_LAYERS = [
+  { id: 'white', maxSize: 300, rotation: 90, color: '#FFFFFF' },
+  { id: 'orange', maxSize: 500, rotation: 45, color: '#FF6B00' },
+  { id: 'blue', maxSize: 700, rotation: 135, color: '#0066FF' },
+  { id: 'yellow', maxSize: 900, rotation: 270, color: '#FFD600' },
+  { id: 'purple', maxSize: 1100, rotation: 225, color: '#9C27B0' },
+  { id: 'pink', maxSize: 1200, rotation: 180, color: '#FF4081' },
 ];
 
-export const Ringlete = ({ onSectionClick, currentSection }: RingleteProps) => {
-  const controls = useAnimation();
-  const ringleteRef = useRef<SVGSVGElement>(null);
-  const rotation = useMotionValue(0);
-  
+const BASE_SIZE = 300;
+const ANIMATION_DURATION = 60; // 60 seconds for mobile animation
+
+export const Ringlete = () => {
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Handle mouse movement for desktop
   useEffect(() => {
+    if (isMobile) return;
+
     const handleMouseMove = (e: MouseEvent) => {
-      if (!ringleteRef.current) return;
-      
-      const rect = ringleteRef.current.getBoundingClientRect();
+      if (!containerRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
-      
-      const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-      const degrees = angle * (180 / Math.PI);
-      
-      controls.start({
-        rotate: degrees + 90,
-        transition: { type: "spring", stiffness: 100, damping: 30 }
-      });
+
+      // Calculate distance from center (-1 to 1)
+      const x = (e.clientX - centerX) / (rect.width / 2);
+      const y = (e.clientY - centerY) / (rect.height / 2);
+
+      mouseX.set(x);
+      mouseY.set(y);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [controls]);
+  }, [isMobile]);
 
-  const handleSectionClick = (sectionId: string) => {
-    controls.start({
-      scale: [1, 1.1, 1],
-      transition: { duration: 0.3 }
+  // Start mobile animation
+  useEffect(() => {
+    if (!isMobile || isAnimating) return;
+
+    setIsAnimating(true);
+    RINGLETE_LAYERS.forEach((layer) => {
+      animate(
+        `[data-ringlete-layer="${layer.id}"]`,
+        {
+          scale: layer.maxSize / BASE_SIZE,
+          rotate: layer.rotation,
+        },
+        {
+          duration: ANIMATION_DURATION,
+          ease: 'linear',
+        }
+      );
     });
-    onSectionClick(sectionId);
-  };
+  }, [isMobile, isAnimating]);
 
   return (
-    <motion.div
-      className="w-[400px] h-[400px] relative"
-      animate={controls}
-      style={{ rotate: rotation }}
+    <div
+      ref={containerRef}
+      className="fixed inset-0 flex items-center justify-center overflow-hidden"
     >
-      <motion.svg
-        ref={ringleteRef}
-        viewBox="0 0 800 800"
-        className="w-full h-full"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* SVG path from your original file */}
-        <motion.path
-          className="stroke-current"
-          d="M712.67,313.87l13.56-3.63-205.8-118.82h0s.04-.06.04-.06h0s0,0,0,0l-162.36,43.5-4.39,1.18-1.65-6.16-62.8,108.78-8.3-5.01-7.67-4.63,71.94-124.61-3.63-13.56-76.81,133.03-14.32-8.65-1.64-.99,85.95-148.86-3.63-13.56-90.81,157.29-15.96-9.64,99.95-173.12-3.63-13.56-104.82,181.55-15.96-9.64,113.96-197.38-3.63-13.56-118.82,205.8-.06-.04h0s0,0,0,0l43.5,162.36,1.18,4.39-6.16,1.65,108.78,62.8-9.64,15.96-124.61-71.94-13.56,3.63,133.03,76.81-9.64,15.96-148.86-85.95-13.56,3.63,157.29,90.81-9.64,15.96-173.12-99.95-13.56,3.63,181.55,104.82-9.64,15.96-197.38-113.95-13.56,3.63,205.8,118.82-.04.06h0s0,0,0,0h0s109.46-29.33,109.46-29.33l22.01-5.9,30.89-8.28,4.39-1.18,1.65,6.16,62.8-108.78,9.53,5.75,6.43,3.88-71.94,124.61,3.63,13.56,76.81-133.03,13.1,7.91,2.86,1.73-85.95,148.86,3.63,13.56,90.81-157.29,15.96,9.64-99.95,173.12,3.63,13.56,104.82-181.55,15.96,9.64-113.96,197.38,3.63,13.56,118.82-205.8h0s.06.04.06.04h0s0,0,0,0h0l-43.5-162.36-1.18-4.39,6.16-1.65-108.78-62.8,9.64-15.96,124.61,71.94,13.56-3.63-133.03-76.81,9.64-15.96,148.86,85.95,13.56-3.63-157.29-90.81,9.64-15.96,173.12,99.95,13.56-3.63-181.55-104.82,9.64-15.96,197.38,113.96Z"
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        />
+      {RINGLETE_LAYERS.map((layer, index) => {
+        // For desktop, transform size and rotation based on mouse position
+        const scale = useTransform(
+          mouseX,
+          [-1, 0, 1],
+          [layer.maxSize / BASE_SIZE, 1, layer.maxSize / BASE_SIZE]
+        );
         
-        {sections.map((section) => (
-          <motion.g
-            key={section.id}
-            transform={`rotate(${section.angle} 400 400)`}
-            onClick={() => handleSectionClick(section.id)}
-            whileHover={{ scale: 1.1 }}
-            className="cursor-pointer"
+        const rotate = useTransform(
+          mouseX,
+          [-1, 0, 1],
+          [layer.rotation, 0, layer.rotation]
+        );
+
+        return (
+          <motion.svg
+            key={layer.id}
+            data-ringlete-layer={layer.id}
+            viewBox="0 0 300 300"
+            className="absolute w-[300px] h-[300px]"
+            style={{
+              scale: isMobile ? 1 : scale,
+              rotate: isMobile ? 0 : rotate,
+              zIndex: RINGLETE_LAYERS.length - index,
+            }}
+            initial={{ scale: 1, rotate: 0 }}
           >
-            <circle
-              cx="400"
-              cy="200"
-              r="30"
-              className={`fill-current ${
-                currentSection === section.id
-                  ? 'text-neon-blue'
-                  : 'text-white'
-              }`}
+            <path
+              d="M150 50 A100 100 0 1 0 150 250 A100 100 0 1 0 150 50 Z M150 100 A50 50 0 1 1 150 200 A50 50 0 1 1 150 100 Z"
+              fill={layer.color}
+              filter="url(#neonGlow)"
             />
-            <text
-              x="400"
-              y="205"
-              textAnchor="middle"
-              className="text-sm fill-black font-space-grotesk"
-            >
-              {section.label}
-            </text>
-          </motion.g>
-        ))}
-      </motion.svg>
-    </motion.div>
+            <defs>
+              <filter id="neonGlow">
+                <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+          </motion.svg>
+        );
+      })}
+    </div>
   );
 };
 
