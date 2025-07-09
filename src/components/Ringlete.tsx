@@ -11,6 +11,7 @@ const NUDGE_FACTOR = 0.3; // 30% nudge
 
 export interface RingleteProps {
   initialWhiteRotation?: number;
+  // Removed spinTrigger
 }
 
 export const Ringlete = ({ initialWhiteRotation = 0 }: RingleteProps) => {
@@ -201,6 +202,7 @@ export const Ringlete = ({ initialWhiteRotation = 0 }: RingleteProps) => {
           width: logoSize,
           height: logoSize,
           transform: `translate(-50%, -50%) translate(${dragOffset.x}px, ${dragOffset.y}px)` ,
+          transition: 'none',
           cursor: dragging ? 'grabbing' : 'grab',
           touchAction: 'none',
           pointerEvents: 'auto',

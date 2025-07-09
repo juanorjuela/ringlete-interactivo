@@ -29,6 +29,8 @@ html, body, #root {
   background: #000 !important;
   overflow: hidden !important;
   position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 @layer components {

@@ -16,10 +16,11 @@ type NavButton = { label: string; view: string };
 type UIOverlayProps = {
   setView: React.Dispatch<React.SetStateAction<'home' | 'about' | 'projects' | 'contact'>>;
   NAV_BUTTONS: NavButton[];
+  currentView: 'home' | 'about' | 'projects' | 'contact';
 };
 
 // Overlay component for UI elements rendered in a portal
-function UIOverlay({ setView, NAV_BUTTONS }: UIOverlayProps) {
+function UIOverlay({ setView, NAV_BUTTONS, currentView }: UIOverlayProps) {
   const overlayRoot = typeof window !== 'undefined' ? document.getElementById('ui-overlay-root') : null;
   // Add state for hovered button and color
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
@@ -45,9 +46,9 @@ function UIOverlay({ setView, NAV_BUTTONS }: UIOverlayProps) {
           style={{
             fontFamily: 'Forced SQUARE',
             fontWeight: 900,
-            fontSize: 64,
+            fontSize: 44,
             lineHeight: 0.6,
-            letterSpacing: '0.04em',
+            letterSpacing: '0.1em',
             color: 'white',
             zIndex: 99999,
             mixBlendMode: 'normal',
@@ -95,48 +96,58 @@ function UIOverlay({ setView, NAV_BUTTONS }: UIOverlayProps) {
         style={{
           position: 'absolute',
           left: 0,
-          bottom: '10%',
+          bottom: '5%',
           zIndex: 99999,
-          mixBlendMode: 'normal',
+          mixBlendMode: 'difference',
           opacity: 1,
           pointerEvents: 'auto',
           width: '100%',
           paddingLeft: 0,
         }}
       >
-        {NAV_BUTTONS.map((btn: NavButton, idx: number) => (
-          <button
-            key={btn.view}
-            className="bg-white text-black font-bold text-left shadow-lg tracking-widest border-2 border-black rounded-none font-[Forced SQUARE] transition-all"
-            style={{
-              fontFamily: 'Forced SQUARE',
-              letterSpacing: '0.3em',
-              minWidth: 180,
-              maxWidth: 250,
-              minHeight: 50,
-              maxHeight: 50,
-              width: '100%',
-              fontSize: 20,
-              padding: '0.75em 2em',
-              display: 'block',
-              marginTop: 10,
-              border: 'none',
-              textAlign: 'left',
-              background: hoveredIdx === idx ? hoverColor : 'white',
-              color: hoveredIdx === idx ? 'white' : 'black',
-              mixBlendMode: 'difference',
-              opacity: 1,
-            }}
-            onMouseEnter={() => {
-              setHoveredIdx(idx);
-              setHoverColor(getRandomColor());
-            }}
-            onMouseLeave={() => setHoveredIdx(null)}
-            onClick={() => setView(btn.view as any)}
-          >
-            {btn.label}
-          </button>
-        ))}
+        {NAV_BUTTONS.map((btn: NavButton, idx: number) => {
+          const isActive = currentView === btn.view;
+          return (
+            <button
+              key={btn.view}
+              className="bg-white text-black font-bold text-left shadow-lg tracking-widest border-2 border-black rounded-none font-[Forced SQUARE] transition-all"
+              style={{
+                fontFamily: 'Forced SQUARE',
+                letterSpacing: '0.3em',
+                minWidth: 180,
+                maxWidth: 250,
+                minHeight: 40,
+                maxHeight: 40,
+                width: '100%',
+                fontSize: 18,
+                padding: '0 1em',
+                display: 'block',
+                marginTop: 10,
+                border: 'none',
+                textAlign: 'left',
+                background: (hoveredIdx === idx || isActive) ? hoverColor : 'white',
+                color: (hoveredIdx === idx || isActive) ? 'white' : 'black',
+                mixBlendMode: 'difference',
+                opacity: 1,
+              }}
+              onMouseEnter={() => {
+                setHoveredIdx(idx);
+                setHoverColor(getRandomColor());
+              }}
+              onMouseLeave={() => setHoveredIdx(null)}
+              onClick={() => {
+                if (isActive) {
+                  setView('home');
+                } else {
+                  setView(btn.view as any);
+                  setHoverColor(getRandomColor());
+                }
+              }}
+            >
+              {btn.label}
+            </button>
+          );
+        })}
       </div>
     </>,
     overlayRoot
@@ -146,83 +157,79 @@ function UIOverlay({ setView, NAV_BUTTONS }: UIOverlayProps) {
 function App() {
   const [view, setView] = useState<'home' | 'about' | 'projects' | 'contact'>('home');
   const [initialWhiteRotation] = useState<number>(0);
-
-  // Card content for About/Projects/Contact
-  const renderCardContent = () => {
-    switch (view) {
-      case 'about':
-        return (
-          <>
-            <motion.h2 layoutId="nav-about" className="font-space-grotesk text-lg md:text-xl font-bold tracking-widest bg-white text-black px-4 py-2 mb-4 w-fit">ABOUT US</motion.h2>
-            <p className="font-outfit text-white/90 text-base md:text-lg max-w-xs md:max-w-md mb-8">
-              Ringlete crea experiencias interactivas que comunican jugando, mezclando arte, tecnología y emoción en soluciones digitales y físicas.
-            </p>
-            <div className="flex flex-col gap-2 w-full">
-              <button className="bg-white text-black font-bold px-4 py-2 w-full text-left">NUESTRA EQUIPO</button>
-              <button className="bg-white text-black font-bold px-4 py-2 w-full text-left">PORTAFOLIO</button>
-            </div>
-          </>
-        );
-      case 'projects':
-        return (
-          <>
-            <motion.h2 layoutId="nav-projects" className="font-space-grotesk text-lg md:text-xl font-bold tracking-widest bg-white text-black px-4 py-2 mb-4 w-fit">PROJECTS</motion.h2>
-            <p className="font-outfit text-white/90 text-base md:text-lg max-w-xs md:max-w-md mb-8">
-              Aquí irá el portafolio de proyectos destacados de Ringlete Interactivo.
-            </p>
-            <div className="flex flex-col gap-2 w-full">
-              <button className="bg-white text-black font-bold px-4 py-2 w-full text-left">PORTAFOLIO</button>
-            </div>
-          </>
-        );
-      case 'contact':
-        return (
-          <>
-            <motion.h2 layoutId="nav-contact" className="font-space-grotesk text-lg md:text-xl font-bold tracking-widest bg-white text-black px-4 py-2 mb-4 w-fit">CONTACT</motion.h2>
-            <p className="font-outfit text-white/90 text-base md:text-lg max-w-xs md:max-w-md mb-8">
-              ¿Quieres colaborar o tienes una idea? ¡Contáctanos!
-            </p>
-            <div className="flex flex-col gap-2 w-full">
-              <button className="bg-white text-black font-bold px-4 py-2 w-full text-left">ENVIAR MENSAJE</button>
-            </div>
-          </>
-        );
-      default:
-        return null;
-    }
-  };
+  // Add spin trigger state
+  // Removed const [spinTrigger, setSpinTrigger] = useState(0);
 
   // Render only the homepage, no loader
   return (
     <>
-      <UIOverlay setView={setView} NAV_BUTTONS={NAV_BUTTONS} />
+      <UIOverlay setView={setView} NAV_BUTTONS={NAV_BUTTONS} currentView={view} />
       {/* Main app container with animation and cards */}
       <div className="w-screen h-screen bg-black overflow-hidden flex items-center justify-center relative">
+        {/* Floating card for About/Projects/Contact (now in portal) */}
+        {(() => {
+          if (typeof window === 'undefined') return null;
+          const overlayRoot = document.getElementById('ui-overlay-root');
+          if (!overlayRoot) return null;
+          return createPortal(
+            <AnimatePresence>
+              {view !== 'home' && (
+                <motion.div
+                  key={view}
+                  className="absolute left-0 right-0 mx-auto z-[9999999] flex flex-col items-center justify-center max-w-[90vw] w-[350px] md:w-[420px]"
+                  initial={{ opacity: 0, y: 40, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 40, scale: 0.98 }}
+                  transition={{ duration: 0.5 }}
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.95)',
+                    borderRadius: 0,
+                    boxShadow: 'none',
+                    border: 'none',
+                    zIndex: 99,
+                    textAlign: 'center',
+                    color: 'white',
+                    opacity: 1,
+                    transform: 'none',
+                    width: '100%',
+                    height: '40%',
+                    margin: 0,
+                    top: '30%',
+                    position: 'absolute',
+                  }}
+                >
+                  <h2 className="font-space-grotesk text-lg md:text-xl font-bold tracking-widest px-4 py-2 mb-4 w-fit text-white text-center mx-auto" style={{ background: 'transparent', color: 'white', textAlign: 'center', width: '100%', transform: 'none', transformOrigin: '50% 50% 0px' }}>
+                    {view === 'about' ? 'ABOUT US' : view === 'projects' ? 'PROJECTS' : 'CONTACT'}
+                  </h2>
+                  <p className="font-outfit text-white/90 text-base md:text-lg max-w-xs md:max-w-md mb-8 text-center mx-auto" style={{ color: 'white', textAlign: 'center', width: '100%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+                    {view === 'about' && 'Ringlete crea experiencias interactivas que comunican jugando, mezclando arte, tecnología y emoción en soluciones digitales y físicas.'}
+                    {view === 'projects' && 'Aquí irá el portafolio de proyectos destacados de Ringlete Interactivo.'}
+                    {view === 'contact' && '¿Quieres colaborar o tienes una idea? ¡Contáctanos!'}
+                  </p>
+                  <div className="flex flex-col gap-2 w-full items-center justify-center">
+                    {view === 'about' && <>
+                      <button className="bg-white text-black font-bold px-4 py-2 w-full text-center">NUESTRA EQUIPO</button>
+                      <button className="bg-white text-black font-bold px-4 py-2 w-full text-center">PORTAFOLIO</button>
+                    </>}
+                    {view === 'projects' && <button className="bg-white text-black font-bold px-4 py-2 w-full text-center">PORTAFOLIO</button>}
+                    {view === 'contact' && <button className="bg-white text-black font-bold px-4 py-2 w-full text-center">ENVIAR MENSAJE</button>}
+                  </div>
+                  <button
+                    className="mt-8 bg-white text-black font-bold font-space-grotesk px-4 py-2 rounded shadow hover:bg-gray-100 transition-all border-2 border-black mx-auto"
+                    onClick={() => setView('home')}
+                  >
+                    ← BACK
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>,
+            overlayRoot
+          );
+        })()}
         {/* Animated ringlete background */}
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center z-[-2] pointer-events-none">
           <Ringlete initialWhiteRotation={initialWhiteRotation} />
         </div>
-        {/* Floating card for About/Projects/Contact */}
-        <AnimatePresence>
-          {view !== 'home' && (
-            <motion.div
-              key={view}
-              className="absolute left-0 right-0 mx-auto top-1/2 -translate-y-1/2 z-30 bg-black/80 border border-white/20 rounded-xl shadow-2xl p-8 md:p-12 flex flex-col items-start max-w-[90vw] w-[350px] md:w-[420px] backdrop-blur-lg"
-              initial={{ opacity: 0, y: 40, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 40, scale: 0.98 }}
-              transition={{ duration: 0.5 }}
-            >
-              {renderCardContent()}
-              <button
-                className="mt-8 bg-white text-black font-bold font-space-grotesk px-4 py-2 rounded shadow hover:bg-gray-100 transition-all border-2 border-black"
-                onClick={() => setView('home')}
-              >
-                ← BACK
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
       {/* Copyright footer (bottom center) */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[99999] w-full flex justify-center pointer-events-none" style={{ mixBlendMode: 'normal' }}>
