@@ -1,119 +1,322 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
-import { useMediaQuery } from 'react-responsive';
+import { useEffect, useState, useRef } from 'react';
+import ringleteWhite from '../icon_ringlete_WHI.webp';
+import ringleteOrange from '../icon_ringlete_ORG.webp';
+import ringleteBlue from '../icon_ringlete_BLU.webp';
+import ringleteYellow from '../icon_ringlete_YEL.webp';
+import ringletePurple from '../icon_ringlete_PUR.webp';
+import ringletePink from '../icon_ringlete_PINK.webp';
 
-// Configuration for each Ringlete logo layer
-const RINGLETE_LAYERS = [
-  { id: 'white', maxSize: 300, rotation: 90, color: '#FFFFFF' },
-  { id: 'orange', maxSize: 500, rotation: 45, color: '#FF6B00' },
-  { id: 'blue', maxSize: 700, rotation: 135, color: '#0066FF' },
-  { id: 'yellow', maxSize: 900, rotation: 270, color: '#FFD600' },
-  { id: 'purple', maxSize: 1100, rotation: 225, color: '#9C27B0' },
-  { id: 'pink', maxSize: 1200, rotation: 180, color: '#FF4081' },
-];
+const ANIMATION_DURATION = 60; // seconds
+const NUDGE_FACTOR = 0.3; // 30% nudge
 
-const BASE_SIZE = 300;
-const ANIMATION_DURATION = 60; // 60 seconds for mobile animation
+export interface RingleteProps {
+  initialWhiteRotation?: number;
+}
 
-export const Ringlete = () => {
-  const isMobile = useMediaQuery({ maxWidth: 768 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const [isAnimating, setIsAnimating] = useState(false);
+export const Ringlete = ({ initialWhiteRotation = 0 }: RingleteProps) => {
+  // Timeline for animation
+  const [timeline, setTimeline] = useState(0);
+  const [whiteRotation, setWhiteRotation] = useState(initialWhiteRotation);
+  const startTime = useRef<number | null>(null);
+  const initialRotationRef = useRef(initialWhiteRotation);
 
-  // Handle mouse movement for desktop
+  // Mouse influence state (desktop only)
+  const mouseTarget = useRef({ x: 0, y: 0 });
+
+  // Smooth lerp state for nudge
+  const [nudge, setNudge] = useState({ x: 0, y: 0 });
+
+  // Drag state
+  const [dragging, setDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 }); // current offset in px
+  const dragStart = useRef({ x: 0, y: 0 });
+  const dragOrigin = useRef({ x: 0, y: 0 });
+
+  // Canvas size (for bounds)
+  const [canvas, setCanvas] = useState({ w: window.innerWidth, h: window.innerHeight });
   useEffect(() => {
-    if (isMobile) return;
+    const handleResize = () => setCanvas({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) return;
+  // Animation progress for scale
+  const t = (timeline % ANIMATION_DURATION) / ANIMATION_DURATION;
+  const eased = 0.5 - 0.5 * Math.cos(Math.PI * 2 * t); // ease in-out
 
-      const rect = containerRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
+  // Rotation progress (linear, never reverses)
+  const globalProgress = (timeline / ANIMATION_DURATION);
 
-      // Calculate distance from center (-1 to 1)
-      const x = (e.clientX - centerX) / (rect.width / 2);
-      const y = (e.clientY - centerY) / (rect.height / 2);
+  // Pink
+  const pinkMin = 301;
+  const pinkMax = 2000;
+  const pinkBase = Math.round(pinkMin + (pinkMax - pinkMin) * eased);
+  const pinkNudge = nudge.y * NUDGE_FACTOR * (pinkMax - pinkMin);
+  const pinkSize = Math.round(pinkBase + pinkNudge);
+  const pinkRotation = -180 * globalProgress;
+  // Purple
+  const purpleMin = 301;
+  const purpleMax = 1500;
+  const purpleBase = Math.round(purpleMin + (purpleMax - purpleMin) * eased);
+  const purpleNudge = nudge.y * NUDGE_FACTOR * (purpleMax - purpleMin);
+  const purpleSize = Math.round(purpleBase + purpleNudge);
+  const purpleBaseRotation = -225 * globalProgress;
+  const purpleRotationRange = -225; // full rotation range (negative for CCW)
+  // X axis nudge: speed up (more negative) or slow down (less negative), never reverse
+  const purpleRotationNudge = -Math.abs(nudge.x) * NUDGE_FACTOR * Math.abs(purpleRotationRange) * (nudge.x >= 0 ? 1 : -1);
+  const purpleRotation = purpleBaseRotation + purpleRotationNudge;
+  // Yellow
+  const yellowMin = 301;
+  const yellowMax = 1000;
+  const yellowBase = Math.round(yellowMin + (yellowMax - yellowMin) * eased);
+  const yellowNudge = nudge.y * NUDGE_FACTOR * (yellowMax - yellowMin);
+  const yellowSize = Math.round(yellowBase + yellowNudge);
+  const yellowBaseRotation = -270 * globalProgress;
+  const yellowRotationRange = -270;
+  const yellowRotationNudge = -Math.abs(nudge.x) * NUDGE_FACTOR * Math.abs(yellowRotationRange) * (nudge.x >= 0 ? 1 : -1);
+  const yellowRotation = yellowBaseRotation + yellowRotationNudge;
+  // Blue
+  const blueMin = 301;
+  const blueMax = 700;
+  const blueBase = Math.round(blueMin + (blueMax - blueMin) * eased);
+  const blueNudge = nudge.x * NUDGE_FACTOR * (blueMax - blueMin);
+  const blueSize = Math.round(blueBase + blueNudge);
+  const blueBaseRotation = -135 * globalProgress;
+  const blueRotationRange = -135;
+  const blueRotationNudge = -Math.abs(nudge.y) * NUDGE_FACTOR * Math.abs(blueRotationRange) * (nudge.y >= 0 ? 1 : -1);
+  const blueRotation = blueBaseRotation + blueRotationNudge;
+  // Orange
+  const orangeMin = 301;
+  const orangeMax = 400;
+  const orangeBase = Math.round(orangeMin + (orangeMax - orangeMin) * eased);
+  const orangeNudge = nudge.x * NUDGE_FACTOR * (orangeMax - orangeMin);
+  const orangeSize = Math.round(orangeBase + orangeNudge);
+  const orangeBaseRotation = -90 * globalProgress;
+  const orangeRotationRange = -90;
+  const orangeRotationNudge = -Math.abs(nudge.y) * NUDGE_FACTOR * Math.abs(orangeRotationRange) * (nudge.y >= 0 ? 1 : -1);
+  const orangeRotation = orangeBaseRotation + orangeRotationNudge;
 
-      mouseX.set(x);
-      mouseY.set(y);
+  // Drag handlers (pointer events for desktop/mobile)
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!dragging) return;
+      const pointerX = e.clientX;
+      const pointerY = e.clientY;
+      // Calculate new offset, clamp to keep logo fully in canvas
+      const logoSize = Math.max(pinkSize, purpleSize, yellowSize, blueSize, orangeSize, 300); // largest layer
+      const half = logoSize / 2;
+      let x = dragOrigin.current.x + (pointerX - dragStart.current.x);
+      let y = dragOrigin.current.y + (pointerY - dragStart.current.y);
+      // Clamp so logo stays fully in canvas
+      x = Math.max(-canvas.w/2 + half, Math.min(canvas.w/2 - half, x));
+      y = Math.max(-canvas.h/2 + half, Math.min(canvas.h/2 - half, y));
+      setDragOffset({ x, y });
     };
+    const handlePointerUp = () => {
+      setDragging(false);
+    };
+    if (dragging) {
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp);
+      window.addEventListener('pointercancel', handlePointerUp);
+    }
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [dragging, canvas, pinkSize, purpleSize, yellowSize, blueSize, orangeSize]);
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [isMobile]);
+  // Drag start handler (now on the group container)
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setDragging(true);
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    dragOrigin.current = { ...dragOffset };
+  };
 
-  // Start mobile animation
   useEffect(() => {
-    if (!isMobile || isAnimating) return;
+    let frame: number;
+    const start = Date.now();
+    startTime.current = start;
+    const animateTimeline = () => {
+      const elapsed = ((Date.now() - start) / 1000) % ANIMATION_DURATION;
+      setTimeline(elapsed);
+      // White layer: -180deg per 30s, counter-clockwise, perpetual
+      // Use initialWhiteRotation as the starting offset
+      const baseRotation = initialRotationRef.current;
+      setWhiteRotation(baseRotation + (-720 * ((Date.now() - start) / 1000 / ANIMATION_DURATION)));
+      frame = requestAnimationFrame(animateTimeline);
+    };
+    frame = requestAnimationFrame(animateTimeline);
+    return () => cancelAnimationFrame(frame);
+  }, [initialWhiteRotation]);
 
-    setIsAnimating(true);
-    RINGLETE_LAYERS.forEach((layer) => {
-      animate(
-        `[data-ringlete-layer="${layer.id}"]`,
-        {
-          scale: layer.maxSize / BASE_SIZE,
-          rotate: layer.rotation,
-        },
-        {
-          duration: ANIMATION_DURATION,
-          ease: 'linear',
-        }
-      );
-    });
-  }, [isMobile, isAnimating]);
+  // Mouse move handler (desktop only)
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      // Normalize to -1 (left/top) to 1 (right/bottom)
+      const x = ((e.clientX / w) - 0.5) * 2;
+      const y = ((e.clientY / h) - 0.5) * 2;
+      mouseTarget.current = { x, y };
+    };
+    if (window.matchMedia('(pointer: fine)').matches) {
+      window.addEventListener('mousemove', handleMouseMove);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  // Lerp nudge toward mouseTarget (springy)
+  useEffect(() => {
+    let frame: number;
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+    const animate = () => {
+      setNudge(prev => {
+        return {
+          x: lerp(prev.x, mouseTarget.current.x, 0.08),
+          y: lerp(prev.y, mouseTarget.current.y, 0.08),
+        };
+      });
+      frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // Compute the largest layer size for the drag area
+  const logoSize = Math.max(pinkSize, purpleSize, yellowSize, blueSize, orangeSize, 300);
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 flex items-center justify-center overflow-hidden"
-    >
-      {RINGLETE_LAYERS.map((layer, index) => {
-        // For desktop, transform size and rotation based on mouse position
-        const scale = useTransform(
-          mouseX,
-          [-1, 0, 1],
-          [layer.maxSize / BASE_SIZE, 1, layer.maxSize / BASE_SIZE]
-        );
-        
-        const rotate = useTransform(
-          mouseX,
-          [-1, 0, 1],
-          [layer.rotation, 0, layer.rotation]
-        );
-
-        return (
-          <motion.svg
-            key={layer.id}
-            data-ringlete-layer={layer.id}
-            viewBox="0 0 300 300"
-            className="absolute w-[300px] h-[300px]"
-            style={{
-              scale: isMobile ? 1 : scale,
-              rotate: isMobile ? 0 : rotate,
-              zIndex: RINGLETE_LAYERS.length - index,
-            }}
-            initial={{ scale: 1, rotate: 0 }}
-          >
-            <path
-              d="M150 50 A100 100 0 1 0 150 250 A100 100 0 1 0 150 50 Z M150 100 A50 50 0 1 1 150 200 A50 50 0 1 1 150 100 Z"
-              fill={layer.color}
-              filter="url(#neonGlow)"
-            />
-            <defs>
-              <filter id="neonGlow">
-                <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                <feMerge>
-                  <feMergeNode in="coloredBlur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-          </motion.svg>
-        );
-      })}
+    <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none" style={{ touchAction: 'none' }}>
+      {/* Animated logo group, translated by dragOffset, now fully draggable */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: logoSize,
+          height: logoSize,
+          transform: `translate(-50%, -50%) translate(${dragOffset.x}px, ${dragOffset.y}px)` ,
+          cursor: dragging ? 'grabbing' : 'grab',
+          touchAction: 'none',
+          pointerEvents: 'auto',
+        }}
+        onPointerDown={handlePointerDown}
+      >
+        {/* Pink animated layer */}
+        <img
+          src={ringletePink}
+          alt="pink ringlete"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: pinkSize,
+            height: pinkSize,
+            transform: `translate(-50%, -50%) rotate(${pinkRotation}deg)`,
+            zIndex: 0,
+            opacity: 1,
+            mixBlendMode: 'difference',
+            pointerEvents: 'none',
+          }}
+          draggable={false}
+        />
+        {/* Purple animated layer */}
+        <img
+          src={ringletePurple}
+          alt="purple ringlete"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: purpleSize,
+            height: purpleSize,
+            transform: `translate(-50%, -50%) rotate(${purpleRotation}deg)`,
+            zIndex: 1,
+            opacity: 1,
+            mixBlendMode: 'difference',
+            pointerEvents: 'none',
+          }}
+          draggable={false}
+        />
+        {/* Yellow animated layer */}
+        <img
+          src={ringleteYellow}
+          alt="yellow ringlete"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: yellowSize,
+            height: yellowSize,
+            transform: `translate(-50%, -50%) rotate(${yellowRotation}deg)`,
+            zIndex: 2,
+            opacity: 1,
+            mixBlendMode: 'difference',
+            pointerEvents: 'none',
+          }}
+          draggable={false}
+        />
+        {/* Blue animated layer */}
+        <img
+          src={ringleteBlue}
+          alt="blue ringlete"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: blueSize,
+            height: blueSize,
+            transform: `translate(-50%, -50%) rotate(${blueRotation}deg)`,
+            zIndex: 3,
+            opacity: 1,
+            mixBlendMode: 'difference',
+            pointerEvents: 'none',
+          }}
+          draggable={false}
+        />
+        {/* Orange animated layer */}
+        <img
+          src={ringleteOrange}
+          alt="orange ringlete"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: orangeSize,
+            height: orangeSize,
+            transform: `translate(-50%, -50%) rotate(${orangeRotation}deg)`,
+            zIndex: 4,
+            opacity: 1,
+            mixBlendMode: 'difference',
+            pointerEvents: 'none',
+          }}
+          draggable={false}
+        />
+        {/* White animated layer (no longer the only drag handle) */}
+        <img
+          src={ringleteWhite}
+          alt="white ringlete"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: 300,
+            height: 300,
+            transform: `translate(-50%, -50%) rotate(${whiteRotation}deg)`,
+            zIndex: 10,
+            opacity: 1,
+            mixBlendMode: 'normal',
+            pointerEvents: 'none',
+            touchAction: 'none',
+          }}
+          draggable={false}
+        />
+      </div>
     </div>
   );
 };

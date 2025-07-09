@@ -1,16 +1,34 @@
+@font-face {
+  font-family: 'Forced SQUARE';
+  src: url('./FORCED SQUARE.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+html, body, #root, * {
+  font-family: 'Forced SQUARE', monospace !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  html {
+  html, body, #root {
     @apply antialiased;
   }
+}
 
-  body {
-    @apply bg-black text-white font-outfit;
-    overflow: hidden;
-  }
+/* Force fullscreen black background and no scroll on all browsers */
+html, body, #root {
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 100vw !important;
+  min-height: 100vh !important;
+  background: #000 !important;
+  overflow: hidden !important;
+  position: relative !important;
 }
 
 @layer components {
@@ -31,4 +49,16 @@
   .animation-delay-4000 {
     animation-delay: 4s;
   }
+}
+
+/* Overlay root for UI elements (always on top, no blend mode) */
+#ui-overlay-root {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483647 !important;
+  pointer-events: none !important;
+  mix-blend-mode: normal !important;
+}
+#ui-overlay-root > * {
+  pointer-events: auto !important;
 }
