@@ -1,0 +1,20 @@
+/* Estilos específicos para la página de pitch */
+.pitch-page-active html,
+.pitch-page-active body,
+.pitch-page-active #root {
+  background: white !important;
+  overflow: auto !important;
+  font-family: 'Outfit', sans-serif !important;
+  min-height: auto !important;
+  height: auto !important;
+  width: auto !important;
+  min-width: auto !important;
+}
+
+.pitch-page-active #root {
+  position: static !important;
+}
+
+.pitch-page-active * {
+  font-family: 'Outfit', sans-serif !important;
+} 

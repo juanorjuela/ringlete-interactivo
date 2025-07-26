@@ -27,20 +27,6 @@ export const Ringlete = ({ initialWhiteRotation = 0 }: RingleteProps) => {
   // Smooth lerp state for nudge
   const [nudge, setNudge] = useState({ x: 0, y: 0 });
 
-  // Drag state
-  const [dragging, setDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 }); // current offset in px
-  const dragStart = useRef({ x: 0, y: 0 });
-  const dragOrigin = useRef({ x: 0, y: 0 });
-
-  // Canvas size (for bounds)
-  const [canvas, setCanvas] = useState({ w: window.innerWidth, h: window.innerHeight });
-  useEffect(() => {
-    const handleResize = () => setCanvas({ w: window.innerWidth, h: window.innerHeight });
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   // Animation progress for scale
   const t = (timeline % ANIMATION_DURATION) / ANIMATION_DURATION;
   const eased = 0.5 - 0.5 * Math.cos(Math.PI * 2 * t); // ease in-out
@@ -97,45 +83,7 @@ export const Ringlete = ({ initialWhiteRotation = 0 }: RingleteProps) => {
   const orangeRotationNudge = -Math.abs(nudge.y) * NUDGE_FACTOR * Math.abs(orangeRotationRange) * (nudge.y >= 0 ? 1 : -1);
   const orangeRotation = orangeBaseRotation + orangeRotationNudge;
 
-  // Drag handlers (pointer events for desktop/mobile)
-  useEffect(() => {
-    const handlePointerMove = (e: PointerEvent) => {
-      if (!dragging) return;
-      const pointerX = e.clientX;
-      const pointerY = e.clientY;
-      // Calculate new offset, clamp to keep logo fully in canvas
-      const logoSize = Math.max(pinkSize, purpleSize, yellowSize, blueSize, orangeSize, 300); // largest layer
-      const half = logoSize / 2;
-      let x = dragOrigin.current.x + (pointerX - dragStart.current.x);
-      let y = dragOrigin.current.y + (pointerY - dragStart.current.y);
-      // Clamp so logo stays fully in canvas
-      x = Math.max(-canvas.w/2 + half, Math.min(canvas.w/2 - half, x));
-      y = Math.max(-canvas.h/2 + half, Math.min(canvas.h/2 - half, y));
-      setDragOffset({ x, y });
-    };
-    const handlePointerUp = () => {
-      setDragging(false);
-    };
-    if (dragging) {
-      window.addEventListener('pointermove', handlePointerMove);
-      window.addEventListener('pointerup', handlePointerUp);
-      window.addEventListener('pointercancel', handlePointerUp);
-    }
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
-    };
-  }, [dragging, canvas, pinkSize, purpleSize, yellowSize, blueSize, orangeSize]);
-
-  // Drag start handler (now on the group container)
-  const handlePointerDown = (e: React.PointerEvent) => {
-    e.preventDefault();
-    setDragging(true);
-    dragStart.current = { x: e.clientX, y: e.clientY };
-    dragOrigin.current = { ...dragOffset };
-  };
-
+  // Restore animation frame effect for timeline and whiteRotation
   useEffect(() => {
     let frame: number;
     const start = Date.now();
@@ -193,7 +141,7 @@ export const Ringlete = ({ initialWhiteRotation = 0 }: RingleteProps) => {
 
   return (
     <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none" style={{ touchAction: 'none' }}>
-      {/* Animated logo group, translated by dragOffset, now fully draggable */}
+      {/* Animated logo group, now static and non-draggable */}
       <div
         style={{
           position: 'absolute',
@@ -201,13 +149,9 @@ export const Ringlete = ({ initialWhiteRotation = 0 }: RingleteProps) => {
           top: '50%',
           width: logoSize,
           height: logoSize,
-          transform: `translate(-50%, -50%) translate(${dragOffset.x}px, ${dragOffset.y}px)` ,
+          transform: `translate(-50%, -50%)`,
           transition: 'none',
-          cursor: dragging ? 'grabbing' : 'grab',
-          touchAction: 'none',
-          pointerEvents: 'auto',
         }}
-        onPointerDown={handlePointerDown}
       >
         {/* Pink animated layer */}
         <img
